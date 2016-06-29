@@ -25,7 +25,7 @@ namespace CoCoL
 		/// </summary>
 		/// <param name="attr">The channel name attributes.</param>
 		public BroadcastingChannel(ChannelNameAttribute attr)
-			: base(attr)
+			: base(attr.Name, attr.BufferSize, attr.MaxPendingReaders, attr.MaxPendingWriters, attr.PendingReadersOverflowStrategy, attr.PendingWritersOverflowStrategy)
 		{
 			if (attr is BroadcastChannelNameAttribute)
 			{

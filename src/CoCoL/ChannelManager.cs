@@ -25,27 +25,7 @@ namespace CoCoL
 		/// <typeparam name="T">The channel type.</typeparam>
 		public static IChannel<T> GetChannel<T>(string name, int buffersize = 0, ChannelScope scope = null, int maxPendingReaders = -1, int maxPendingWriters = -1, QueueOverflowStrategy pendingReadersOverflowStrategy = QueueOverflowStrategy.Reject, QueueOverflowStrategy pendingWritersOverflowStrategy = QueueOverflowStrategy.Reject, bool broadcast = false, int initialBroadcastBarrier = -1, int broadcastMinimum = -1) 
 		{
-			if (!broadcast && (initialBroadcastBarrier >= 0 || broadcastMinimum >= 0))
-				throw new ArgumentException(string.Format("Cannot set \"{0}\" or \"{1}\" unless the channel is a broadcast channel", "initialBroadcastBarrier", "broadcastMinimum"));
-
-			var attr =
-				broadcast
-				? new BroadcastChannelNameAttribute(name, buffersize, ChannelNameScope.Local, maxPendingReaders, maxPendingWriters, pendingReadersOverflowStrategy, pendingWritersOverflowStrategy, initialBroadcastBarrier, broadcastMinimum)
-				: new ChannelNameAttribute(name, buffersize, ChannelNameScope.Local, maxPendingReaders, maxPendingWriters, pendingReadersOverflowStrategy, pendingWritersOverflowStrategy);
-			
-			return GetChannel<T>(attr, scope);
-		}
-
-		/// <summary>
-		/// Gets or creates a named channel.
-		/// </summary>
-		/// <returns>The named channel.</returns>
-		/// <param name="attr">The attribute describing the channel.</param>
-		/// <param name="scope">The scope to create a named channel in, defaults to null which means the current scope</param>
-		/// <typeparam name="T">The channel type.</typeparam>
-		public static IChannel<T> GetChannel<T>(ChannelNameAttribute attr, ChannelScope scope = null)
-		{
-			return (scope ?? ChannelScope.Current).GetOrCreate<T>(attr);
+			return GetChannel<T>(name, buffersize, scope, maxPendingReaders, maxPendingWriters, pendingReadersOverflowStrategy, pendingWritersOverflowStrategy);			
 		}
 
 		/// <summary>
@@ -62,7 +42,7 @@ namespace CoCoL
 			else if (marker.TargetScope == ChannelNameScope.Global)
 				scope = ChannelScope.Root;
 
-			return GetChannel<T>(marker.Attribute, scope);
+			return GetChannel<T>(marker.Name, marker.BufferSize, scope);
 		}
 
 		/// <summary>
@@ -83,7 +63,7 @@ namespace CoCoL
 			else if (rt.Attribute.TargetScope == ChannelNameScope.Global)
 				scope = ChannelScope.Root;
 			
-			return GetChannel<T>(rt.Attribute, scope).AsWriteOnly();
+			return GetChannel<T>(rt.Name, rt.Attribute.BufferSize, scope).AsWriteOnly();
 		}
 
 		/// <summary>
@@ -104,7 +84,7 @@ namespace CoCoL
 			else if (rt.Attribute.TargetScope == ChannelNameScope.Global)
 				scope = ChannelScope.Root;
 
-			return GetChannel<T>(rt.Attribute, scope).AsReadOnly();
+			return GetChannel<T>(rt.Attribute.Name, rt.Attribute.BufferSize, scope).AsReadOnly();
 		}
 
 		/// <summary>
@@ -130,20 +110,6 @@ namespace CoCoL
 		}
 
 		/// <summary>
-		/// Creates a channel, possibly unnamed.
-		/// If a channel name is provided, the channel is created in the supplied scope.
-		/// If a channel with the given name is already found in the supplied scope, the named channel is returned.
-		/// </summary>
-		/// <returns>The named channel.</returns>
-		/// <param name="attr">The attribute describing the channel.</param>
-		/// <param name="scope">The scope to create a named channel in, defaults to null which means the current scope</param>
-		/// <typeparam name="T">The channel type.</typeparam>
-		public static IChannel<T> CreateChannel<T>(ChannelNameAttribute attr, ChannelScope scope = null)
-		{
-			return GetChannel<T>(attr, scope);
-		}
-
-		/// <summary>
 		/// Creates a channel for use in a scope
 		/// </summary>
 		/// <returns>The channel.</returns>
@@ -156,10 +122,7 @@ namespace CoCoL
 		/// <typeparam name="T">The channel type.</typeparam>
 		internal static IChannel<T> CreateChannelForScope<T>(string name, int buffersize, int maxPendingReaders, int maxPendingWriters, QueueOverflowStrategy pendingReadersOverflowStrategy, QueueOverflowStrategy pendingWritersOverflowStrategy)
 		{
-			if (attribute is BroadcastChannelNameAttribute)
-				return new BroadcastingChannel<T>(attribute);
-			else
-				return new Channel<T>(attribute); 
+			return new Channel<T>(name, buffersize, maxPendingReaders, maxPendingWriters, pendingReadersOverflowStrategy, pendingWritersOverflowStrategy); 
 		}
 	}
 }
